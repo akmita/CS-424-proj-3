@@ -4,6 +4,7 @@
 library(dplyr)
 library(hash)
 library(lubridate)
+library(stringr)
 
 source("./companies.r", local = FALSE) # for hashing company names into abbreviations
 
@@ -47,9 +48,8 @@ renameCols <- function(DF) {
 # format to nice date format
 #
 formatDate <- function(DF) {
-    # $_@_#_$#_($#_)$@#
-  DF$start_formatted <- strptime(DF$start, format='%m/%d/%Y %I:%M:%S %p') 
-  
+  DF$start <- strptime(DF$start, format='%m/%d/%Y %I:%M:%S %p') 
+
   return(DF)
 }
 
@@ -57,8 +57,8 @@ formatDate <- function(DF) {
 #
 # fix trips granularity - 12:15, 12:30, 12:45 become 12:00 
 #
-fixGranularity <- function (DF) {             # $_@_#_$#_($#_)$@#
-  DF$start_gran <- as.POSIXct(paste0(format(DF$start_formatted,"%Y-%m-%d %H:"), "00:00 CDT"))
+fixGranularity <- function (DF) {             
+  DF$start <- as.POSIXct(paste0(format(DF$start,"%Y-%m-%d %H:"), "00:00 CDT"))
 
   return(DF)
 }
@@ -108,13 +108,11 @@ getData <- function() {
   # append dataframes without header to original dataframe
   for (i in 2:3) {
     # read next csv 
-    temp <- read.table(file = paste0(filenames[[i]]), sep = ",", header = FALSE)-
+    temp <- read.table(file = paste0(filenames[[i]]), sep = ",", header = FALSE)
     
-      print("fuck")
       
     temp <- parseTripData(temp)
     
-      print("FUCK")
     
     # append to main dataframe
     DF <- rbind(DF, temp)  

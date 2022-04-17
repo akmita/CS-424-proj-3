@@ -11,7 +11,7 @@ library(shiny)
 
 
 ui <- fluidPage(
-  column(2, 
+  column(12, 
      titlePanel("Hello World"),
      dataTableOutput("mytable")
   )

@@ -14,7 +14,7 @@ getBasicBarPlot <- function(D) {
 
 
 parseByHour = function(D) {
-  D <- aggregate(x = D, by = list(format(D$start, "%H")), FUN = sum)
+  D <- aggregate(x = rep(1, nrow(D)), by = list(format(D$start, "%H")), FUN = sum)
   names(D) <- c("Hour", "Rides")
   
   return(D)

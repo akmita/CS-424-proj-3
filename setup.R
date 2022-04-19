@@ -106,13 +106,15 @@ getData <- function() {
   
   
   # append dataframes without header to original dataframe
-  for (i in 2:3) {
+  # ---- MUST START WITH 2 ----
+  for (i in 2:5) {
     # read next csv 
     temp <- read.table(file = paste0(filenames[[i]]), sep = ",", header = FALSE)
     
       
     temp <- parseTripData(temp)
     
+    print(paste("parsing file: ", i))
     
     # append to main dataframe
     DF <- rbind(DF, temp)  

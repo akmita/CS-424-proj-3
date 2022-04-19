@@ -7,19 +7,26 @@
 
 library(DT)
 library(shiny)
+library(ggplot2)
 
+source("./plotHelpers.R", local = FALSE)
 
 
 ui <- fluidPage(
   column(12, 
      titlePanel("Hello World"),
-     dataTableOutput("mytable")
+     dataTableOutput("allRides"),
+     plotOutput("ridesByYear"),
   )
 )
 
 
 server <- function(input, output) {
-  output$mytable = DT::renderDataTable(DF)
+  output$allRides = DT::renderDataTable(DF)
+  
+  output$ridesByYear <- renderPlot({
+    getBasicBarPlot(parseByHour(DF))
+  })
 }
 
 

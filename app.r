@@ -12,44 +12,87 @@ library(ggplot2)
 source("./plotHelpers.R", local = FALSE)
 
 
+getGraphTab <- function(id, output_b, output_t) {
+  return(
+    tabsetPanel(
+      id="hr",
+      tabPanel("Bar Graph", id="bar", plotOutput(output_b)),
+      tabPanel("Table", id="table", DT::dataTableOutput(output_t)),
+    )
+  )
+}
+
+
+################################
+#            UI                #
+################################
 
 ui <- fluidPage(
   column(12, 
-     titlePanel("Hello World"),
-     dataTableOutput("allRides"),
-     plotOutput("ridesByHour"),
-     plotOutput("ridesByDay"),
-     plotOutput("ridesByMonth"),
-     plotOutput("ridesByWeekday"),
-     plotOutput("ridesByMileage"),
+     # dataTableOutput("allRides"),
+     
+     getGraphTab("Hour", "ridesByHour", "ridesByHour_t"),
+     getGraphTab("Day", "ridesByDay", "ridesByDay_t"),
+     getGraphTab("Month", "ridesByMonth", "ridesByMonth_t"),
+     getGraphTab("Weekday", "ridesByWeekday", "ridesByWeekday_t"),
+     getGraphTab("Mileage", "ridesByMileage", "ridesByMileage_t"),
+     getGraphTab("Duration", "ridesByTripTime", "ridesByTripTime_t"),
   )
 )
 
 
+################################
+#         SERVER               #
+################################
 
 server <- function(input, output) {
-  output$allRides = DT::renderDataTable(DF)
+  # output$allRides = DT::renderDataTable(DF)
   
+  # Hour
   output$ridesByHour <- renderPlot({
     getBasicBarPlot(parseByHour(DF))
   })
+  output$ridesByHour_t <- DT::renderDataTable(parseByHour(DF))
   
+  # Day
   output$ridesByDay <- renderPlot({
     getBarPlot_angledX(parseByDay(DF))
   })
+  output$ridesByDay_t <- DT::renderDataTable(parseByDay(DF))
   
+  
+  # Month
   output$ridesByMonth <- renderPlot({
     getBasicBarPlot(parseByMonth(DF))
   })
+  output$ridesByMonth_t <- DT::renderDataTable(parseByMonth(DF))
   
+  
+  # Weekday
   output$ridesByWeekday <- renderPlot({
     getBasicBarPlot(parseByWeekday(DF))
   })
+  output$ridesByWeekday_t <- DT::renderDataTable(parseByWeekday(DF))
   
+  
+  # Mileage
   output$ridesByMileage <- renderPlot({
-    getBasicBarPlot(binByMileage(DF))
+    getBasicBarPlot((binByMileage(DF)))
   })
+  output$ridesByMileage_t <- DT::renderDataTable(binByMileage(DF))
+  
+  
+  # Duration
+  output$ridesByTripTime <- renderPlot({
+    getBasicBarPlot(binByDuration(DF))
+  })
+  output$ridesByTripTime_t <- DT::renderDataTable(binByDuration(DF))
+  
 }
 
+
+################################
+#            INIT              #
+################################
 
 shinyApp(ui, server)

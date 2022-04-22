@@ -78,6 +78,9 @@ encodeCompanies <- function(DF) {
 parseTripData <- function(DF) {
   DF <- DF[colsToKeep]
   DF <- renameCols(DF)
+  
+  DF <- sample_n(DF, 100)
+  
   DF <- filterTrips(DF)
   DF <- encodeCompanies(DF)
   DF <- formatDate(DF)
@@ -107,11 +110,10 @@ getData <- function() {
   
   # append dataframes without header to original dataframe
   # ---- MUST START WITH 2 ----
-  for (i in 2:5) {
+  for (i in 2:165) {
     # read next csv 
     temp <- read.table(file = paste0(filenames[[i]]), sep = ",", header = FALSE)
     
-      
     temp <- parseTripData(temp)
     
     print(paste("parsing file: ", i))

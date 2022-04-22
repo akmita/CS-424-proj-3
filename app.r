@@ -18,9 +18,10 @@ ui <- fluidPage(
      titlePanel("Hello World"),
      dataTableOutput("allRides"),
      plotOutput("ridesByHour"),
-     plotOutput("ridesByYear"),
+     plotOutput("ridesByDay"),
      plotOutput("ridesByMonth"),
-     plotOutput("ridesByWeekday")
+     plotOutput("ridesByWeekday"),
+     plotOutput("ridesByMileage"),
   )
 )
 
@@ -33,8 +34,8 @@ server <- function(input, output) {
     getBasicBarPlot(parseByHour(DF))
   })
   
-  output$ridesByYear <- renderPlot({
-    getBasicBarPlot(parseByYear(DF))
+  output$ridesByDay <- renderPlot({
+    getBarPlot_angledX(parseByDay(DF))
   })
   
   output$ridesByMonth <- renderPlot({
@@ -43,6 +44,10 @@ server <- function(input, output) {
   
   output$ridesByWeekday <- renderPlot({
     getBasicBarPlot(parseByWeekday(DF))
+  })
+  
+  output$ridesByMileage <- renderPlot({
+    getBasicBarPlot(binByMileage(DF))
   })
 }
 

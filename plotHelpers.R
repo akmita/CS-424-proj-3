@@ -19,9 +19,19 @@ getBarPlot_angledX <- function(D) {
 #            DATA AGGREGATION - move to separate file
 
 
-parseByHour = function(D) {
-  D <- aggregate(x = rep(1, nrow(D)), by = list(format(D$start, "%H")), FUN = sum)
+parseByHour = function(D, timeChc) {
+  # get hour format
+  hourFormat <- if(timeChc == timeChoices[1]) "%H" else "%I %p"
+  
+  # D <- aggregate(x = rep(1, nrow(D)), by = list(str_replace_all(format(D$start, hourFormat), "0[:digit:]", "0[:digit:]") ), FUN = sum)
+  D <- aggregate(x = rep(1, nrow(D)), by = list(format(D$start, hourFormat)), FUN = sum)
   names(D) <- c("Hour", "Rides")
+  
+  # reorder and prevent auto sorting
+  if(timeChc == timeChoices[2])  {
+    D <- D[c(23,1,3,5,7,9,11,13,15,17,19,21,24,2,4,6,8,10,12,14,16,18,20,22),]
+    D$Hour <- factor(D$Hour, levels = D$Hour)
+  }
   
   return(D)
 }

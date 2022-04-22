@@ -1,0 +1,1 @@
+timeChoices = c("24 Hour", "12 Hour AM/PM")

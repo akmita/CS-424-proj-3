@@ -5,19 +5,34 @@
 # how to set up map
 # https://rstudio.github.io/leaflet/shapes.html
 
+
 library(DT)
 library(shiny)
 library(ggplot2)
 
+source("./globals.R", local = FALSE)
 source("./plotHelpers.R", local = FALSE)
 
 
 getGraphTab <- function(id, output_b, output_t) {
   return(
-    tabsetPanel(
-      id="hr",
-      tabPanel("Bar Graph", id="bar", plotOutput(output_b)),
-      tabPanel("Table", id="table", DT::dataTableOutput(output_t)),
+    wellPanel(
+      tabsetPanel(
+        id="hr",
+        tabPanel("Bar Graph", id="bar", plotOutput(output_b)),
+        tabPanel("Table", id="table", DT::dataTableOutput(output_t)),
+      )
+    )
+  )
+}
+
+
+getBasicControls <- function() {
+  wellPanel(
+    radioButtons(
+      inputId = "time_choice",
+      label = "Choose How To Display Time",
+      choices = timeChoices
     )
   )
 }
@@ -30,6 +45,8 @@ getGraphTab <- function(id, output_b, output_t) {
 ui <- fluidPage(
   column(12, 
      # dataTableOutput("allRides"),
+     
+     getBasicControls(),
      
      getGraphTab("Hour", "ridesByHour", "ridesByHour_t"),
      getGraphTab("Day", "ridesByDay", "ridesByDay_t"),
@@ -50,9 +67,9 @@ server <- function(input, output) {
   
   # Hour
   output$ridesByHour <- renderPlot({
-    getBasicBarPlot(parseByHour(DF))
+    getBasicBarPlot(parseByHour(DF, input$time_choice))
   })
-  output$ridesByHour_t <- DT::renderDataTable(parseByHour(DF))
+  output$ridesByHour_t <- DT::renderDataTable(parseByHour(DF, input$time_choice))
   
   # Day
   output$ridesByDay <- renderPlot({

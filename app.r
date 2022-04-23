@@ -47,10 +47,63 @@ getstrtEndControls <- function() {
   wellPanel(
     radioButtons(
       inputId = "start_or_end",
-      label = "Show Rides Starting or Ending in Community Area",
+      label = "Show Rides Starting or Ending in Selected Area",
       choices = c("start", "end")
     )
   )
+}
+
+createMap = function() {
+  leaflet(chicago) %>% addPolygons(color = "#444444", 
+                                   weight = 1, 
+                                   smoothFactor = 0.5,
+                                   opacity = 1.0, 
+                                   fillOpacity = 0.5,
+                                   layerId = chicago$area_num_1,
+                                   highlightOptions = highlightOptions(color = "white", weight = 2,
+                                                                       bringToFront = TRUE))
+}
+
+updateMap <- function(newData) {
+  if (!is.null(newData) & length(newData[,1]) > 0) {
+    print("community area data updated, updating map")
+    
+    # TODO don't proceed if clicked area has 0 rides - pretty much impossible
+    
+     
+    # fill in missing areas wiht 0 values and sort to match chicago areas on map    
+    D <- fillMissingCommAreas(newData)
+    D <- D[order(strtoi(D$Community_Area)),]
+    D <- D[strtoi(chicago$area_num_1),]
+    
+    # get percentages and mappings 
+    percentages <- as.double(D$Percentage_Rides)
+    colorMapping <- 100 / ((percentages+0.1)^0.5)
+    
+
+    # create palette
+    pal <- colorNumeric(
+      palette = heat.colors(5, alpha = 1),
+      domain = c(colorMapping))
+    
+    # update map
+    leafletProxy("chicagoMap", data = chicago) %>% clearShapes() %>% addPolygons(
+      color = pal(colorMapping), 
+      # labels for hover and click
+      label = paste(chicago$community, "  ", percentages, "%"),
+      popup = paste(chicago$community, "  ", percentages, "%"),
+      weight = 1, 
+      smoothFactor = 0.5,
+      opacity = 1.0, 
+      fillOpacity = 0.5,
+      layerId = chicago$area_num_1,
+      highlightOptions = highlightOptions(color = "white", weight = 2, bringToFront = TRUE))
+  }
+}
+
+
+prioritizeSelection <- function() {
+  
 }
 
 
@@ -60,10 +113,9 @@ getstrtEndControls <- function() {
 
 ui <- fluidPage(
   column(12, 
-     # dataTableOutput("allRides"),
-     
+         
+     uiOutput("mapTitle"),
      getBasicControls(),
-     
      getGraphTab("Hour", "ridesByHour", "ridesByHour_t"),
      getGraphTab("Day", "ridesByDay", "ridesByDay_t"),
      getGraphTab("Month", "ridesByMonth", "ridesByMonth_t"),
@@ -73,7 +125,6 @@ ui <- fluidPage(
      leafletOutput("chicagoMap"),
      getstrtEndControls(),
      getGraphTab("percentByCommunity", "ridesByCommunityArea", "ridesByCommunityArea_t"),
-     
   )
 )
 
@@ -85,9 +136,15 @@ ui <- fluidPage(
 server <- function(input, output) {
   selectedCommArea <- reactiveVal()   # user-selected community area for viewing to-from data
   
+  curDF_comm_area <- reactive({
+    parseByCommunityArea(DF, selectedCommArea(), input$start_or_end)
+  })
   
-  # output$allRides = DT::renderDataTable(DF)
-  
+  # wait for selected comm area data to update
+  # update map
+  observe({
+      updateMap(curDF_comm_area())
+  })
   
   
   # Hour
@@ -132,20 +189,19 @@ server <- function(input, output) {
   
   # Map
   output$chicagoMap <- renderLeaflet({ 
-    leaflet(chicago) %>% addPolygons(color = "#444444", 
-                                      weight = 1, 
-                                      smoothFactor = 0.5,
-                                      opacity = 1.0, 
-                                      fillOpacity = 0.5,
-                                      layerId = chicago$area_num_1,
-                                      highlightOptions = highlightOptions(color = "white", weight = 2,
-                                                                        bringToFront = TRUE))
+    createMap()
+  })
+  
+  # Map Title
+  output$mapTitle <- renderUI(h4(paste("Rides in: ", selectedCommArea())))
+  
+
+  observe({
+    proxy <- leafletProxy("chicagoMap")
   })
   
   
-  #
   # community heat map on-click 
-  #
   observeEvent(input$chicagoMap_shape_click, { 
     comm_id <- input$chicagoMap_shape_click$id
     selectedCommArea(comm_id)
@@ -154,17 +210,21 @@ server <- function(input, output) {
   })
   
   
-  #
   # community area to-from
-  #
   output$ridesByCommunityArea <-  renderPlot({
-    getBarPlot_angledX(parseByCommunityArea(DF, selectedCommArea(), input$start_or_end))
+    # TODO don't display graph if not selected
+    if (!is.null(selectedCommArea())) {
+      getRidesBarPlot(curDF_comm_area())
+    }
   })
   output$ridesByCommunityArea_t <- DT::renderDataTable({
     if (!is.null(selectedCommArea())) {
-      parseByCommunityArea(DF, selectedCommArea(), input$start_or_end)
+      curDF_comm_area()
     }
   })
+  
+  
+  
   
   
 }

@@ -79,7 +79,7 @@ parseTripData <- function(DF) {
   DF <- DF[colsToKeep]
   DF <- renameCols(DF)
   
-  DF <- sample_n(DF, 100)
+  DF <- sample_n(DF, 100)                           #######################################################################
   
   DF <- filterTrips(DF)
   DF <- encodeCompanies(DF)
@@ -124,5 +124,32 @@ getData <- function() {
   
   return(DF)
 }
+
+
+
+getCommunityAreas <- function() {
+  D <- data.frame(strtoi(chicago$area_num_1), chicago$community)
+  names(D) <- c("id", "name")
+  
+  D <- D[order(D$id),]
+  
+  return(D)
+}
+
+
+getChicagoData <- function() {
+  return(readOGR("./chicagoMapData/geo_export_bd87ad81-9ee0-4a43-a802-c68e88a02bba.shp",
+          GDAL1_integer64_policy = TRUE))
+}
+
+
+
+# chicago <- readOGR("./chicagoMapData/geo_export_bd87ad81-9ee0-4a43-a802-c68e88a02bba.shp",
+#                    GDAL1_integer64_policy = TRUE)
+# 
+# 
+# commHash <- hash(chicago$area_num_1, chicago$community)
+# 
+# commUnhash <- hash(chicago$community, chicago$area_num_1)
 
 

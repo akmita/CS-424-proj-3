@@ -169,4 +169,31 @@ createMileageBins = function(D) {
 }
 
 
+#
+# returns data for viewing which community areas end or start a trip
+#
+parseByCommunityArea = function(D, selectedCommArea, start_or_end) {
+  if (is.null(selectedCommArea)) {
+    return(data.frame())
+  }
+  
+  
+  isStartingArea <- start_or_end == "start"
+  
+  # subset for start or ending in community area
+  subsetCol <- if (isStartingArea) D$pickupArea else D$dropOffArea
+  D <- subset(D, subsetCol == selectedCommArea)
+  numTotal <- length(D[,1])
+  
+  # aggregate trips starting or ending in community area
+  aggCol <- if (isStartingArea) D$dropOffArea else D$pickupArea 
+  D <- aggregate(x = rep(1, nrow(D)), by = list(communityAreas[strtoi(aggCol),2]), sum)
+  
+  names(D) <- c("Community_Area", "Percentage_Rides")
+  
+  # do percentage
+  D$Percentage_Rides <- format(round(100 * D$Percentage_Rides / numTotal, 2), 2)
+  
+  return(D)
+}
 

@@ -5,10 +5,16 @@
 # how to set up map
 # https://rstudio.github.io/leaflet/shapes.html
 
+#
+# when you sconnect to ssh, make sure to use -p tag for port 2222   cs424! ?? or CS424! ??
+# 
+
 
 library(DT)
 library(shiny)
 library(ggplot2)
+library(rgdal)
+library(leaflet)
 
 source("./globals.R", local = FALSE)
 source("./plotHelpers.R", local = FALSE)
@@ -18,7 +24,7 @@ getGraphTab <- function(id, output_b, output_t) {
   return(
     wellPanel(
       tabsetPanel(
-        id="hr",
+        id=id,
         tabPanel("Bar Graph", id="bar", plotOutput(output_b)),
         tabPanel("Table", id="table", DT::dataTableOutput(output_t)),
       )
@@ -33,6 +39,16 @@ getBasicControls <- function() {
       inputId = "time_choice",
       label = "Choose How To Display Time",
       choices = timeChoices
+    )
+  )
+}
+
+getstrtEndControls <- function() {
+  wellPanel(
+    radioButtons(
+      inputId = "start_or_end",
+      label = "Show Rides Starting or Ending in Community Area",
+      choices = c("start", "end")
     )
   )
 }
@@ -54,6 +70,10 @@ ui <- fluidPage(
      getGraphTab("Weekday", "ridesByWeekday", "ridesByWeekday_t"),
      getGraphTab("Mileage", "ridesByMileage", "ridesByMileage_t"),
      getGraphTab("Duration", "ridesByTripTime", "ridesByTripTime_t"),
+     leafletOutput("chicagoMap"),
+     getstrtEndControls(),
+     getGraphTab("percentByCommunity", "ridesByCommunityArea", "ridesByCommunityArea_t"),
+     
   )
 )
 
@@ -63,7 +83,12 @@ ui <- fluidPage(
 ################################
 
 server <- function(input, output) {
+  selectedCommArea <- reactiveVal()   # user-selected community area for viewing to-from data
+  
+  
   # output$allRides = DT::renderDataTable(DF)
+  
+  
   
   # Hour
   output$ridesByHour <- renderPlot({
@@ -104,6 +129,43 @@ server <- function(input, output) {
     getBasicBarPlot(binByDuration(DF))
   })
   output$ridesByTripTime_t <- DT::renderDataTable(binByDuration(DF))
+  
+  # Map
+  output$chicagoMap <- renderLeaflet({ 
+    leaflet(chicago) %>% addPolygons(color = "#444444", 
+                                      weight = 1, 
+                                      smoothFactor = 0.5,
+                                      opacity = 1.0, 
+                                      fillOpacity = 0.5,
+                                      layerId = chicago$area_num_1,
+                                      highlightOptions = highlightOptions(color = "white", weight = 2,
+                                                                        bringToFront = TRUE))
+  })
+  
+  
+  #
+  # community heat map on-click 
+  #
+  observeEvent(input$chicagoMap_shape_click, { 
+    comm_id <- input$chicagoMap_shape_click$id
+    selectedCommArea(comm_id)
+    
+    print(paste("selected area:", comm_id))
+  })
+  
+  
+  #
+  # community area to-from
+  #
+  output$ridesByCommunityArea <-  renderPlot({
+    getBarPlot_angledX(parseByCommunityArea(DF, selectedCommArea(), input$start_or_end))
+  })
+  output$ridesByCommunityArea_t <- DT::renderDataTable({
+    if (!is.null(selectedCommArea())) {
+      parseByCommunityArea(DF, selectedCommArea(), input$start_or_end)
+    }
+  })
+  
   
 }
 

@@ -13,6 +13,40 @@ getBarPlot_angledX <- function(D) {
    + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) # fixes overlapping names
   )
 }
+ 
+
+
+getRidesBarPlot <- function(D) {
+  (ggplot(data=D, aes(x=Community_Area_Name, y=Percentage_Rides))
+   + geom_bar(stat="identity")
+   + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) # fixes overlapping names
+  )
+}
+
+
+############################################################
+#                   HELPERS
+
+sym_diff <- function(a,b) setdiff(union(a,b), intersect(a,b))
+
+fillMissingCommAreas <- function(D) {
+  # get missing IDs
+  missingIDs <- sym_diff(communityAreas$id, D$Community_Area)
+  
+  # new dataframe with names
+  zeroVals <- data.frame(matrix(ncol = 3, nrow = 0))
+  names(zeroVals) <- names(D)
+  
+  # fill new dataframe with missing values
+  for (i in 1:length(missingIDs)) {
+    zeroVals[nrow(zeroVals) + 1,] = c(missingIDs[i], 0.0, communityAreas[strtoi(missingIDs[i]),2])
+  }
+  
+  # append to old dataframe
+  D <- rbind(D, zeroVals)
+  
+  return(D)  
+}
 
 
 #############################################################
@@ -82,7 +116,7 @@ parseByWeekday = function(D) {
 #
 binByDuration= function(D) {
 
-  D <- aggregate(x = rep(1, nrow(DF)), by = list(createDurationBins(DF)), sum)
+  D <- aggregate(x = rep(1, nrow(D)), by = list(createDurationBins(D)), sum)
   
   # rename
   names(D) <- c("Duration", "Rides")
@@ -114,7 +148,7 @@ createDurationBins = function(D) {
     else if (dur > 60 * 60 & dur <= 60 * 60 * 2) { return("1 - 2 hrs") }
     else { return("2 - 5 hrs") }
     
-  }, X = DF, MARGIN = 1))
+  }, X = D, MARGIN = 1))
 }
 
 
@@ -124,7 +158,7 @@ createDurationBins = function(D) {
 #
 binByMileage = function(D) {
   
-  D <- aggregate(x = rep(1, nrow(DF)), by = list(createMileageBins(DF)), sum)
+  D <- aggregate(x = rep(1, nrow(D)), by = list(createMileageBins(D)), sum)
   
   # rename
   names(D) <- c("Mileage", "Rides")
@@ -162,10 +196,55 @@ createMileageBins = function(D) {
       return("50-100 mi")
     }
     
-  }, X = DF, MARGIN = 1)
+  }, X = D, MARGIN = 1)
   
   
   return(temp)
+}
+
+
+#
+# returns data for viewing which community areas end or start a trip
+#
+parseByCommunityArea = function(D, selectedCommArea, start_or_end) {
+  
+  isStartingArea <- start_or_end == "start"
+  
+  # subset for start or ending in community area
+  subsetCol <- if (isStartingArea) D$pickupArea else D$dropOffArea
+  D <- subset(D, subsetCol == selectedCommArea)
+  
+  numTotal <- length(D[,1])
+  
+  if (numTotal == 0) {
+    return(NULL)
+  }
+  
+  # aggregate trips starting or ending in community area
+  aggCol <- if (isStartingArea) D$dropOffArea else D$pickupArea 
+  D <- aggregate(x = rep(1, nrow(D)), by = list(strtoi(aggCol)), sum)
+  
+  # rename cols
+  names(D) <- c("Community_Area", "Percentage_Rides")
+  
+  # bind ids 
+  D$Community_Area_Name <- communityAreas[strtoi(D$Community_Area),2]
+  
+  # # do percentage
+  D$Percentage_Rides <- round(100 * D$Percentage_Rides / numTotal, 2)
+  # 
+  return(D)
+}
+
+
+getCommAreaSubset <- function(D, start_or_end, selectedCommArea) {
+  isStartingArea <- start_or_end == "start"
+  
+  # subset for start or ending in community area
+  subsetCol <- if (isStartingArea) D$pickupArea else D$dropOffArea
+  D <- subset(D, subsetCol == selectedCommArea)
+  
+  return(D)
 }
 
 

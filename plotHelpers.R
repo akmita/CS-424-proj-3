@@ -116,7 +116,7 @@ parseByWeekday = function(D) {
 #
 binByDuration= function(D) {
 
-  D <- aggregate(x = rep(1, nrow(DF)), by = list(createDurationBins(DF)), sum)
+  D <- aggregate(x = rep(1, nrow(D)), by = list(createDurationBins(D)), sum)
   
   # rename
   names(D) <- c("Duration", "Rides")
@@ -148,7 +148,7 @@ createDurationBins = function(D) {
     else if (dur > 60 * 60 & dur <= 60 * 60 * 2) { return("1 - 2 hrs") }
     else { return("2 - 5 hrs") }
     
-  }, X = DF, MARGIN = 1))
+  }, X = D, MARGIN = 1))
 }
 
 
@@ -158,7 +158,7 @@ createDurationBins = function(D) {
 #
 binByMileage = function(D) {
   
-  D <- aggregate(x = rep(1, nrow(DF)), by = list(createMileageBins(DF)), sum)
+  D <- aggregate(x = rep(1, nrow(D)), by = list(createMileageBins(D)), sum)
   
   # rename
   names(D) <- c("Mileage", "Rides")
@@ -196,7 +196,7 @@ createMileageBins = function(D) {
       return("50-100 mi")
     }
     
-  }, X = DF, MARGIN = 1)
+  }, X = D, MARGIN = 1)
   
   
   return(temp)
@@ -213,6 +213,7 @@ parseByCommunityArea = function(D, selectedCommArea, start_or_end) {
   # subset for start or ending in community area
   subsetCol <- if (isStartingArea) D$pickupArea else D$dropOffArea
   D <- subset(D, subsetCol == selectedCommArea)
+  
   numTotal <- length(D[,1])
   
   if (numTotal == 0) {
@@ -234,5 +235,17 @@ parseByCommunityArea = function(D, selectedCommArea, start_or_end) {
   # 
   return(D)
 }
+
+
+getCommAreaSubset <- function(D, start_or_end, selectedCommArea) {
+  isStartingArea <- start_or_end == "start"
+  
+  # subset for start or ending in community area
+  subsetCol <- if (isStartingArea) D$pickupArea else D$dropOffArea
+  D <- subset(D, subsetCol == selectedCommArea)
+  
+  return(D)
+}
+
 
 

@@ -35,7 +35,7 @@ filterTrips <- function(DF) {
 } 
 
 
-#
+# 
 # give easy names to columns
 #
 renameCols <- function(DF) {
@@ -79,7 +79,7 @@ parseTripData <- function(DF) {
   DF <- DF[colsToKeep]
   DF <- renameCols(DF)
   
-  DF <- sample_n(DF, 100)                           #######################################################################
+  DF <- sample_n(DF, 10000)                           #######################################################################
   
   DF <- filterTrips(DF)
   DF <- encodeCompanies(DF)
